@@ -1,0 +1,221 @@
+import java.util.Scanner;
+
+public class ConnectFour 
+{
+	public static final int ROW_LIMIT = 6;
+	public static final int COLUMN_LIMIT = 7;
+	public static final int WINNING_NUMBER = 4;
+
+	public static void main(String[] args) {
+		intro();
+		Scanner keyboard = new Scanner(System.in);
+		String[] names = getNames(keyboard);
+		board(names, keyboard);
+	}
+
+	// show the intro
+	public static void intro() {
+		System.out.println("This program allows two people to play the");
+		System.out.println("game of Connect four. Each player takes turns");
+		System.out.println("dropping a checker in one of the open columns");
+		System.out.println("on the board. The columns are numbered 1 to 7.");
+		System.out.println("The first player to get four checkers in a row");
+		System.out.println("horizontally, vertically, or diagonally wins");
+		System.out.println("the game. If no player gets fours in a row and");
+		System.out.println("and all spots are taken the game is a draw.");
+		System.out.println("Player one's checkers will appear as r's and");
+		System.out.println("player two's checkers will appear as b's.");
+		System.out.println("Open spaces on the board will appear as .'s.\n");
+	}
+
+	//returns array with player names
+	public static String[] getNames(Scanner keyboard) {
+		String[] names = new String[2];
+		System.out.print("Player 1 enter your name: ");
+		names[0] = keyboard.nextLine();
+		System.out.println();
+		System.out.print("Player 2 enter your name: ");
+		names[1] = keyboard.nextLine();
+		System.out.println();
+		return names;
+	}
+
+	//makes initial board
+	public static void board(String[] names, Scanner keyboard) {
+		System.out.println("Current Board");
+		System.out.println("1 2 3 4 5 6 7  column numbers");
+		char[][] board = new char[ROW_LIMIT][COLUMN_LIMIT];
+		for(int r = 0; r < board.length; r++) {
+			for(int c = 0; c < board[0].length; c++) {
+				board[r][c] = '.';
+				System.out.print(board[r][c] + " ");
+			}
+			System.out.println();
+		}
+		System.out.println();
+		playGame(names, keyboard, board);
+	}
+
+	//plays game
+	public static void playGame(String[] names, Scanner keyboard, char[][] board) {
+		char[] pieces = {'r','b'};
+		int currentPlayer = 0;
+		String prompt = "";
+		while(!checkWinner(board) && !checkIfDraw(board)) {
+			prompt = names[currentPlayer] + ", enter the column to drop your checker: ";
+			System.out.println(names[currentPlayer] + " it is your turn.");
+			System.out.println("Your pieces are the "+ pieces[currentPlayer] + "'s.");
+			System.out.print(prompt);
+
+			int col = getInt(keyboard, prompt);
+			getValidColumn(keyboard, board, pieces[currentPlayer], col, currentPlayer, prompt, names);
+
+			currentPlayer = (currentPlayer + 1) % 2;
+		}
+	}
+
+	//checks if column is between 1 and 7 and empty
+	public static void getValidColumn(Scanner keyboard, char[][] board, char piece, int col, int currentPlayer, String prompt, String[] names) {
+		Boolean valid = ((col > 0 && col <= COLUMN_LIMIT) && board[0][col-1] == '.');
+		while(!valid) {
+			System.out.println();
+			if(col <= 0 || col > COLUMN_LIMIT) {
+				System.out.println(col + " is not a valid column.");
+			} else {
+				System.out.println(col + " is not a legal column. That column is full");
+			}
+			System.out.print(prompt);
+			col = getInt(keyboard, prompt);
+			valid = ((col > 0 && col <= COLUMN_LIMIT) && board[0][col-1] == '.');
+		}
+		changeBoard(col, board, piece, names, currentPlayer);
+	}
+
+	//changes board with user's piece
+	public static void changeBoard(int column, char board[][], char piece, String[] names, int currentPlayer) {
+		int row = 0;
+		while(row < board.length && board[row][column-1] == '.') {
+			row++;
+		}
+		row--;
+		board[row][column-1] = piece;
+		display(board, names, currentPlayer);
+	}
+
+	//displays current board throughout game and final board or draw board at end
+	public static void display(char[][] board, String[] names, int currentPlayer) 
+	{		
+		System.out.println();
+		whichBoard(board, names, currentPlayer);
+		System.out.println("1 2 3 4 5 6 7  column numbers");
+		for(int r = 0; r < board.length; r++){
+			for(int c = 0; c < board[0].length; c++) {
+				System.out.print(board[r][c] + " ");
+			}
+			System.out.println();
+		}
+		System.out.println();
+	}
+
+	//prints correct title of board for each round
+	public static void whichBoard(char[][] board, String[] names, int currentPlayer) {
+		if(checkIfDraw(board)) {
+			System.out.println("The game is a draw.");
+			System.out.println();
+			System.out.println("Final Board");
+		} else if (!checkWinner(board)) {
+			System.out.println("Current Board");
+		} else {
+			System.out.println(names[currentPlayer] + " wins!!");
+			System.out.println();
+			System.out.println("Final Board");
+		}
+	}
+
+	//prompt the user for an integer
+	public static int getInt(Scanner keyboard, String prompt) {
+		while(!keyboard.hasNextInt()) {
+			String notAnInt = keyboard.nextLine();
+			System.out.println();
+			System.out.println(notAnInt + " is not an integer.");
+			System.out.print(prompt);
+		}
+		int result = keyboard.nextInt();
+		keyboard.nextLine();
+		return result;
+	}
+
+	//checks if anyone has won yet
+	public static Boolean checkWinner(char[][] board) {
+		char piece;
+		for(int r = 0; r < board.length; r++) {
+			for(int c = 0; c < board[0].length; c++) {
+				int count = 0;
+				if(board[r][c] == 'r' || board[r][c] == 'b') {
+					count++;
+					piece = board[r][c];
+
+					if(checkAllDirections(board, c, r, count, piece, 0, 1) == 4 || checkAllDirections(board, c, r, count, piece, 1, 0) == 4
+							|| checkAllDirections(board, c, r, count, piece, 1, 1) == 4 || checkAllDirections(board, c, r, count, piece, 1, -1) == 4) {
+						return true;
+					}
+				}
+			}
+		}
+		return false;
+	}
+
+	//checks board horizontally, vertically, down and to right, and down and to left based on rowChange and colChange parameter
+	public static int checkAllDirections(char[][] board, int c, int r, int count, char piece, int rowChange, int colChange)
+	{
+		count = checkIfFour(board, piece, count, r, c, rowChange, colChange);
+		return count;
+	}
+
+	//checks if there are four of the same piece in a row
+	public static int checkIfFour(char[][] board, char piece, int count, int r, int c, int rowChange, int colChange)
+	{
+		int currentRow = rowChange;
+		int currentCol = colChange;
+		while(currentRow < WINNING_NUMBER && currentCol < WINNING_NUMBER) {
+			if(checkBounds(board, r, c, currentRow, currentCol)) 
+			{
+				if(board[r+currentRow][c+currentCol] == piece) {
+					count++;
+				} 
+				else 
+				{
+					return 0;
+				}
+				
+			} 
+			else 
+			{
+				return 0;
+			}
+			currentRow += rowChange;
+			currentCol += colChange;
+		}
+		return count;
+	}
+
+	//returns true if next piece to check is inside the board
+	public static Boolean checkBounds(char[][] board, int r, int c, int currentRow, int currentCol) {
+		return currentRow + r < board.length && currentCol + c < board[0].length && currentRow + r >= 0 && currentCol + c >= 0;
+	}
+
+	//checks if a draw occurred
+	public static Boolean checkIfDraw(char[][] board) {
+		for(int r = 0; r < board.length; r++)
+		{
+			for(int c = 0; c < board[0].length; c++)
+			{
+				if(board[r][c] == '.')
+				{
+					return false;
+				}
+			}
+		}
+		return true;
+	}
+}
